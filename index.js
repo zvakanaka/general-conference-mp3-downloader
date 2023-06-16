@@ -48,7 +48,7 @@ async function getItems(pageBody) {
   })
   return mp3DownloadLinks
     .map((link, i) => {
-      return [link, `./output/${`${i}`.padStart(2, '0')}-${outputFilenames[i]}`]
+      return [link, `./output/${`${i + 1}`.padStart(2, '0')}-${outputFilenames[i]}`]
     })
     .filter(([_, fileName]) => (!['Auditing Department Report', 'Sustaining of General Authorities'].includes(fileName)))
 }
