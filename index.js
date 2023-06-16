@@ -1,5 +1,4 @@
-
-const http = require('http'); // or 'https' for https:// URLs
+const http = require('https'); // or 'https' for https:// URLs
 const sequentialPromiseAll = require('sequential-promise-all')
 const { getBody } = require('body-snatchers')
 const fs = require('fs');
@@ -11,7 +10,7 @@ const lang = 'eng'
 const baseUrl = 'https://www.churchofjesuschrist.org'
 
 async function getPage1() {
-  const page1Url = `https://www.churchofjesuschrist.org/study/general-conference/2023/04?lang=${lang}`
+  const page1Url = `${baseUrl}/study/general-conference/2023/04?lang=${lang}`
   const page1Body = await getBody(page1Url, false)
   return page1Body
 }
@@ -50,19 +49,24 @@ async function getItems(pageBody) {
     const mp3Link = json.meta.audio[0].mediaUrl
     return `${mp3Link}?download=true`
   })
-  return [mp3DownloadLinks, outputFilenames]
+  return mp3DownloadLinks
+    .map((link, i) => {
+      return [link, outputFilenames[i]]
+    })
     .filter(([_, fileName]) => (!['Auditing Department Report', 'Sustaining of General Authorities'].includes(fileName)))
 }
 
 async function downloadAndSave(url, fileName) {
-  const file = fs.createWriteStream(fileName);
-  const request = http.get(url, function(response) {
-    response.pipe(file);
-    file.on("finish", () => {
-      file.close();
-      return `Download Completed for ${url} -> ${fileName}`;
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(fileName);
+    const request = http.get(url, function(response) {
+      response.pipe(file);
+      file.on("finish", () => {
+        file.close();
+        resolve(`Download Completed for ${url} -> ${fileName}`);
+      });
     });
-  });
+  })
 }
 (async () => {
   const page1Body = await getPage1()
@@ -79,9 +83,9 @@ async function downloadAndSave(url, fileName) {
       argsHandle, // modify this in the callback to change the arguments at the next invocation
       previousResponse, // what is resolved from promise (timeout)
       i) => {
-      console.log(`${i + 1}/${n}`)
       argsHandle[0] = items[i][0]
       argsHandle[1] = items[i][1]
+      console.log(`${i + 1}/${n} ${argsHandle.join(', ')}`)
     });
   console.log('done')
 })()
