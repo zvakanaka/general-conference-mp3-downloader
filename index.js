@@ -18,7 +18,6 @@ async function getPage1() {
 const fetchJson = async (url, options = {}) => {
   const res = await fetch(url, options)
   const json = await res.json()
-  console.log('json', json)
   return json
 }
 
@@ -36,7 +35,6 @@ async function getItems(pageBody) {
   const dataLinks = itemHrefs.map(item => {
     const urlObj = new URL(`${baseUrl}${item}`)
     const dataLink = `${baseUrl}/study/api/v3/language-pages/type/content?lang=${lang}&uri=${urlObj.pathname.split('/study')[1]}`
-    console.log(dataLink)
     return dataLink
   })
   const pArray = dataLinks.map(item => {
@@ -44,14 +42,13 @@ async function getItems(pageBody) {
   })
   const datas = await Promise.all(pArray)
   const mp3DownloadLinks = datas.map(item => {
-    console.log(item)
     const json = item
     const mp3Link = json.meta.audio[0].mediaUrl
     return `${mp3Link}?download=true`
   })
   return mp3DownloadLinks
     .map((link, i) => {
-      return [link, outputFilenames[i]]
+      return [link, `./output/${`${i}`.padStart(2, '0')}-${outputFilenames[i]}`]
     })
     .filter(([_, fileName]) => (!['Auditing Department Report', 'Sustaining of General Authorities'].includes(fileName)))
 }
@@ -71,10 +68,9 @@ async function downloadAndSave(url, fileName) {
 (async () => {
   const page1Body = await getPage1()
   const items = await getItems(page1Body)
-  console.log(items)
 
   const n = items.length; // number of times to call promise
-  console.log(`1/${n}`)
+  console.log(`1/${n} ${[...items[0]].join(', ')}`)
   await sequentialPromiseAll(
     downloadAndSave, // function that returns a promise - must return something (will be called n times after previous one resolves)
     [...items[0]], // arguments array provided to promise (timeout)
@@ -87,6 +83,6 @@ async function downloadAndSave(url, fileName) {
       argsHandle[1] = items[i][1]
       console.log(`${i + 1}/${n} ${argsHandle.join(', ')}`)
     });
-  console.log('done')
+  console.log('Done.')
 })()
 
