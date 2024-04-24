@@ -1,16 +1,18 @@
-const http = require('https'); // or 'https' for https:// URLs
+const http = require('https') // or 'https' for https:// URLs
 const sequentialPromiseAll = require('sequential-promise-all')
 const { getBody } = require('body-snatchers')
-const fs = require('fs');
+const fs = require('fs')
 const jsdom = require('jsdom')
 const { JSDOM } = jsdom
 const fetch = require('node-fetch')
 
 const lang = 'eng'
 const baseUrl = 'https://www.churchofjesuschrist.org'
+const month = process.argv[2] || '04'
+const year = process.argv[3] || '2024'
 
 async function getPage1() {
-  const page1Url = `${baseUrl}/study/general-conference/2023/04?lang=${lang}`
+  const page1Url = `${baseUrl}/study/general-conference/${year}/${month}?lang=${lang}`
   const page1Body = await getBody(page1Url, false)
   return page1Body
 }
@@ -55,21 +57,21 @@ async function getItems(pageBody) {
 
 async function downloadAndSave(url, fileName) {
   return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(fileName);
+    const file = fs.createWriteStream(fileName)
     const request = http.get(url, function(response) {
-      response.pipe(file);
+      response.pipe(file)
       file.on("finish", () => {
-        file.close();
-        resolve(`Download Completed for ${url} -> ${fileName}`);
-      });
-    });
+        file.close()
+        resolve(`Download Completed for ${url} -> ${fileName}`)
+      })
+    })
   })
 }
 (async () => {
   const page1Body = await getPage1()
   const items = await getItems(page1Body)
 
-  const n = items.length; // number of times to call promise
+  const n = items.length // number of times to call promise
   console.log(`1/${n} ${[...items[0]].join(', ')}`)
   await sequentialPromiseAll(
     downloadAndSave, // function that returns a promise - must return something (will be called n times after previous one resolves)
@@ -82,7 +84,7 @@ async function downloadAndSave(url, fileName) {
       argsHandle[0] = items[i][0]
       argsHandle[1] = items[i][1]
       console.log(`${i + 1}/${n} ${argsHandle.join(', ')}`)
-    });
+    })
   console.log('Done.')
 })()
 
